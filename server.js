@@ -80,7 +80,41 @@ app.post('/api/products', (req, res) => {
   products.push(newProduct);
   res.status(201).json(newProduct);
 });
+
 // PUT /api/products/:id - Update a product
+app.put('/api/product/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, description, price, category, inStock } = req.body;
+
+  const productIndex = products.findIndex(p => p.id === id);
+
+  if (productIndex === -1) {
+    return res.status(404).json({ error: "Product with that ID not found." });
+  }
+
+  // Proper validation
+  if (
+    name == null ||
+    description == null ||
+    price == null ||
+    category == null ||
+    inStock == null
+  ) {
+    return res.status(400).json({ error: "All fields are required." });
+  }
+
+  products[productIndex] = {
+    id,
+    name,
+    description,
+    price,
+    category,
+    inStock
+  };
+
+  res.json(products[productIndex]);
+});
+
 // DELETE /api/products/:id - Delete a product
 
 // Example route implementation for GET /api/products
