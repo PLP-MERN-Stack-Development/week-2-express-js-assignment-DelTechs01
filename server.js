@@ -51,8 +51,35 @@ app.get('/', (req, res) => {
 app.get('/api/products/', (req, res) => {
   res.json(products);
 });
+
 // GET /api/products/:id - Get a specific product
+app.get('/api/products/:id', (req, res) => {
+  const {id} = req.params;
+  const product = products.find(p => p.id === id);
+  if(!product) {
+    return res.status(404).json({error:'Product not Found'});
+  }
+  res.json(product);
+});
+
+
 // POST /api/products - Create a new product
+app.post('/api/products', (req, res) => {
+  const { name, description, price, category, inStock} = req.body;
+  if(!name || !description || !price || !category || !inStock) {
+    return res.status(404).json({error:'All fields are required'});
+  }
+  const newProduct = {
+    id:uuidv4(),
+    name,
+    description,
+    price,
+    category,
+    inStock
+  };
+  products.push(newProduct);
+  res.status(201).json(newProduct);
+});
 // PUT /api/products/:id - Update a product
 // DELETE /api/products/:id - Delete a product
 
