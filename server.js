@@ -47,6 +47,10 @@ app.get('/', (req, res) => {
 
 // TODO: Implement the following routes:
 // GET /api/products - Get all products
+
+app.get('/api/products/', (req, res) => {
+  res.json(products);
+});
 // GET /api/products/:id - Get a specific product
 // POST /api/products - Create a new product
 // PUT /api/products/:id - Update a product
