@@ -12,6 +12,29 @@ const PORT = process.env.PORT || 3000;
 // Middleware setup
 app.use(bodyParser.json());
 
+// Middleware for logging requests
+const requestLogger = (req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+};
+app.use(requestLogger);
+
+// Authentication middleware
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Unauthorized, No token provided' });
+  }
+
+  const token = authHeader.split(' ')[1];
+  if (token !== 'mysecrettoken') {
+    return res.status(403).json({ error: 'Forbidden, Invalid token' });
+  }
+
+  next();
+};
+
 // Sample in-memory products database
 let products = [
   {
@@ -20,7 +43,7 @@ let products = [
     description: 'High-performance laptop with 16GB RAM',
     price: 1200,
     category: 'electronics',
-    inStock: true
+    inStock: true,
   },
   {
     id: '2',
@@ -28,7 +51,7 @@ let products = [
     description: 'Latest model with 128GB storage',
     price: 800,
     category: 'electronics',
-    inStock: true
+    inStock: true,
   },
   {
     id: '3',
@@ -36,63 +59,59 @@ let products = [
     description: 'Programmable coffee maker with timer',
     price: 50,
     category: 'kitchen',
-    inStock: false
-  }
+    inStock: false,
+  },
 ];
 
 // Root route
-app.get('/', (req, res) => {
+app.get('/', authenticate, (req, res) => {
   res.send('Welcome to the Product API! Go to /api/products to see all products.');
 });
 
-// TODO: Implement the following routes:
 // GET /api/products - Get all products
-
-app.get('/api/products/', (req, res) => {
+app.get('/api/products', (req, res) => {
   res.json(products);
 });
 
 // GET /api/products/:id - Get a specific product
 app.get('/api/products/:id', (req, res) => {
-  const {id} = req.params;
-  const product = products.find(p => p.id === id);
-  if(!product) {
-    return res.status(404).json({error:'Product not Found'});
+  const { id } = req.params;
+  const product = products.find((p) => p.id === id);
+  if (!product) {
+    return res.status(404).json({ error: 'Product not found' });
   }
   res.json(product);
 });
 
-
 // POST /api/products - Create a new product
 app.post('/api/products', (req, res) => {
-  const { name, description, price, category, inStock} = req.body;
-  if(!name || !description || !price || !category || !inStock) {
-    return res.status(404).json({error:'All fields are required'});
+  const { name, description, price, category, inStock } = req.body;
+  if (!name || !description || price == null || !category || inStock == null) {
+    return res.status(400).json({ error: 'All fields are required' });
   }
   const newProduct = {
-    id:uuidv4(),
+    id: uuidv4(),
     name,
     description,
     price,
     category,
-    inStock
+    inStock,
   };
   products.push(newProduct);
   res.status(201).json(newProduct);
 });
 
 // PUT /api/products/:id - Update a product
-app.put('/api/product/:id', (req, res) => {
+app.put('/api/products/:id', (req, res) => {
   const { id } = req.params;
   const { name, description, price, category, inStock } = req.body;
 
-  const productIndex = products.findIndex(p => p.id === id);
+  const productIndex = products.findIndex((p) => p.id === id);
 
   if (productIndex === -1) {
-    return res.status(404).json({ error: "Product with that ID not found." });
+    return res.status(404).json({ error: 'Product with that ID not found.' });
   }
 
-  // Proper validation
   if (
     name == null ||
     description == null ||
@@ -100,7 +119,7 @@ app.put('/api/product/:id', (req, res) => {
     category == null ||
     inStock == null
   ) {
-    return res.status(400).json({ error: "All fields are required." });
+    return res.status(400).json({ error: 'All fields are required.' });
   }
 
   products[productIndex] = {
@@ -109,23 +128,25 @@ app.put('/api/product/:id', (req, res) => {
     description,
     price,
     category,
-    inStock
+    inStock,
   };
 
   res.json(products[productIndex]);
 });
 
 // DELETE /api/products/:id - Delete a product
+app.delete('/api/products/:id', (req, res) => {
+  const { id } = req.params;
 
-// Example route implementation for GET /api/products
-app.get('/api/products', (req, res) => {
-  res.json(products);
+  const initialLength = products.length;
+  products = products.filter((p) => p.id !== id);
+
+  if (products.length === initialLength) {
+    return res.status(404).json({ error: 'Product with that ID not found.' });
+  }
+
+  res.status(204).send(); // No Content
 });
-
-// TODO: Implement custom middleware for:
-// - Request logging
-// - Authentication
-// - Error handling
 
 // Start the server
 app.listen(PORT, () => {
@@ -133,4 +154,4 @@ app.listen(PORT, () => {
 });
 
 // Export the app for testing purposes
-module.exports = app; 
+module.exports = app;
